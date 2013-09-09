@@ -1,0 +1,47 @@
+About
+-----
+This project implements a plugin for Jira 4.0.1 and 4.3.4 providing a gadget that displays a chart over how the number
+of bugs of your filter have changed over time (one year period) and groups the bugs by category (severeness).
+
+The project consists of the following parts:
+- The plugin descriptor (resources/atlassian-plugin.xml) describing the plugin for Jira.
+- The gadget specification (resources/bug-mountain-gadget.xml) describing and implementing the gadget. The gadget
+  uses Atlassians extension of OpenSocial gadgets and consists of descriptor and javascript code.
+- A REST service (java.com.ongame.jira.BugMountain) for servicing the gadget with chart generation (and name lookup)
+  for filters and projects. The service uses JFreeChart for chart generation.
+
+
+Build
+-----
+1) First of all you need to install atlassian-plugin-sdk on your machine. I used version 3.2.3. Follow the instructions
+   for the plugin sdk.
+
+2) Run "atlas-compile && atlas-package" from your shell in your project root. The maven-based build will download
+   dependencies and eventually produce a bugmountain-1.x.jar in your target folder.
+
+
+Publish
+-------
+1) Change version in pom.xml.
+2) Rebuild.
+3) Scp target/bugmountain-x.x.jar yourname@ivy.bgs.gameop.net:
+4) Ssh to ivy.bgs.gameop.net and move the file to the /var/cmtools/bugmountain folder.
+5) Change owner (chown) to buildm:buildm for the file.
+
+
+Deploy
+------
+1) Copy the bugmountain-1.0.jar to your JIRA_HOME/plugins/installed_plugins.
+
+2) Edit the log4j configuration located at JIRA_INSTALL/WEB-INF/classes/log4j.properties, adding the following lines:
+#####
+## Bugmountain plugin
+####
+log4j.logger.com.ongame.jira = INFO, console, filelog
+log4j.additivity.com.ongame.jira = false
+
+3) Restart Jira.
+
+4) Enable the remote api calls option in general settings within Jira.
+
+5) You should now have a Bugmountain gadget to use for your pleasure and enjoyment.
