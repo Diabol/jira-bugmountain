@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<Module>
+    <ModulePrefs title="Bug mountain"
+                 directory_title="Bug mountain"
+                 description="Displays how the number of bugs (by priority) have changed over time..."
+                 author="Per Huss"
+                 author_email="per.huss@diabol.se"
+                 thumbnail='#staticResourceUrl("com.ongame.jira.bugmountain:gadget", "thumbnail.png")'
+            >
+        <Require feature="dynamic-height"/>
+        <Require feature="oauthpopup"/>
+        <Require feature="setprefs"/>
+        <Require feature="settitle"/>
+        <Require feature="views"/>
+        <Optional feature="atlassian.util"/>
+        <Optional feature="gadget-directory">
+            <Param name="categories">
+                JIRA
+                Charts
+            </Param>
+        </Optional>
+        #oauth
+        #supportedLocales("gadget.common,gadget.user.activity")
+    </ModulePrefs>
+    <UserPref name="isConfigured" datatype="hidden" default_value="false"/>
+    <UserPref name="refresh" datatype="hidden" default_value="false"/>
+    <UserPref name="isPopup" datatype="hidden" default_value="false"/>
+    <UserPref name="projectOrFilterId" datatype="hidden"/>
+    <Content type="html" view="profile, canvas, home">
+    <![CDATA[
+        #requireResource("com.atlassian.jira.gadgets:common")
+        #includeResources()
+        <style type="text/css">
+            .view {padding:0.5em 1em;}
+        </style>
+        <script type="text/javascript">
+
+            var gadget = AJS.Gadget({
+                baseUrl: "__ATLASSIAN_BASE_URL__",
+                config: {
+                    descriptor: function(args)
+                    {
+                        gadgets.window.setTitle("Bug mountain - configure");
+                        var projectPicker = AJS.gadget.fields.projectPicker(this, "projectOrFilterId", args.projectOptions);
+
+                        return {
+                            theme: (gadgets.window.getViewportDimensions().width < 450)? "gdt top-label": "gdt",
+                            fields: [ projectPicker, AJS.gadget.fields.nowConfigured() ]
+                        };
+                    },
+                    args: [{ key: "projectOptions",
+                             ajaxOptions:  "/rest/gadget/1.0/filtersAndProjects?showFilters=true" }]
+                },
+                view: {
+                    onResizeAdjustHeight: true,
+                    onResizeReload: true,
+                    enableReload: true,
+                    template: function (args)
+                    {
+                        gadgets.window.setTitle("Bug mountain - " + args.projectOrFilterId.name);
+                        var gadget = this;
+                        gadget.showLoading();
+                        var width = gadgets.window.getViewportDimensions().width - 10;
+                        var height = Math.round(width * 2/3);
+                        var projectOrFilterId = this.getPref("projectOrFilterId");
+                        var src = "/rest/bug-mountain/1.0/" + encodeURIComponent(projectOrFilterId) + "/chart-" + width + "x" + height;
+                        var onload = function() { gadget.hideLoading(); }
+                        var helpText = "Make sure your query contains all statuses, as you're most likely interested in both"
+                                       + " resolved and unresolved issues. ";
+                        var img = AJS.$("<img/>").attr({src: src, height: height, width: width}).load(onload);
+                        var footer = "The chart shows number of unresolved issues for last year. ";
+                        this.getView().empty()
+                            .append(AJS.$("<span/>").attr({title: helpText})
+                                         .append(AJS.$("<div align='center'/>").append(img),
+                                                 AJS.$("<div/>").append(footer)));
+                        this.resize();
+                    },
+                    args: [{ key: "projectOrFilterId",
+                            ajaxOptions: function() {
+                                return {
+                                    url: "/rest/bug-mountain/1.0/" + encodeURIComponent(this.getPref("projectOrFilterId")) + "/name"
+                                };
+                            }
+                          }]
+                }
+            });
+        </script>
+  ]]>
+  </Content>
+</Module>
